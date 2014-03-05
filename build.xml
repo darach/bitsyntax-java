@@ -1,0 +1,89 @@
+<!--
+
+Copyright (c) 2013 Darach Ennis < darach at gmail dot com >.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the
+following conditions:  
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-->
+
+<project name='bitsyntax-java' basedir='.' default='dist'>
+
+    <path id='build.path'>
+        <fileset dir='lib'>
+            <include name='**/*.jar'/>
+        </fileset>
+    </path> 
+
+    <path id='test.path'>
+        <pathelement location='build/src-classes'/>
+        <pathelement location='build/test-classes'/>
+        <path refid='build.path'/>
+    </path>
+
+    <target name='clean'>
+        <delete dir='build'/>
+    </target>
+
+    <target name='purge' depends='clean'>
+        <delete dir='dist'/>
+        <delete file='bitsyntax-java-0.0.1.jar'/>
+    </target>
+
+    <target name='init'>
+        <mkdir dir='build'/>
+        <mkdir dir='build/src-classes'/>
+        <mkdir dir='build/generated'/>
+        <mkdir dir='build/test-classes'/>
+        <mkdir dir='build/test-xml'/>
+    </target>
+
+    <target name='pre-build' depends='init'>
+        <java jar='lib/antlr-4.2-complete.jar' fork='true'>
+            <arg line="src/io/darach/bitsyntax/BitSyntax.g4 -o build/generated -atn -listener -no-visitor -encoding UTF-8 -package io.darach.bitsyntax"/>
+        </java>
+    </target>
+
+    <target name='build' depends='pre-build'>
+        <javac srcdir='build/generated/src' destdir='build/src-classes' classpathref='build.path'/> 
+        <javac srcdir='src' destdir='build/src-classes' classpathref='build.path'/> 
+        <jar file='bitsyntax-java-0.0.1.jar' basedir='build/src-classes'/>
+        <javac srcdir='test' destdir='build/test-classes' classpathref='test.path'/>
+    </target>
+
+    <target name='test' depends='build'>
+      <junit dir="${basedir}" failureproperty="test.failure" printSummary="yes" fork="true" haltonerror="false">
+        <classpath refid='test.path'/>
+        <batchtest todir="build/test-xml">
+          <fileset dir="test">
+            <include name="**/*.java" />
+          </fileset>
+          <formatter type='xml'/>
+        </batchtest>
+      </junit>
+      <junitreport todir="build/test-xml">
+        <fileset dir="build/test-xml">
+          <include name="TEST-*.xml"/>
+        </fileset>
+        <report format="frames" todir="build/test-reports"/>
+      </junitreport>        
+    </target>
+
+    <target name='dist' depends='test'/>
+</project>
